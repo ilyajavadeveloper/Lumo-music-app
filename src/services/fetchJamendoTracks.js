@@ -1,36 +1,44 @@
 import axios from 'axios';
 
-/**
- * Fetches tracks from Jamendo API via proxy
- */
+const JAMENDO_CLIENT_ID = 'fc610b1f';
+const BASE_URL = 'https://api.jamendo.com/v3.0';
+
 export const fetchJamendoTracks = async (query = 'pop') => {
-  if (!query || query.trim() === '') return [];
+  if (!query.trim()) return [];
+
+  const params = {
+    client_id: JAMENDO_CLIENT_ID,
+    format: 'json',
+    limit: 30,
+    namesearch: query,
+    include: 'musicinfo+stats',
+    order: 'popularity_total',
+  };
 
   try {
-    const response = await axios.get('http://localhost:5000/jamendo/search', {
-      params: { q: query }
-    });
+    const response = await axios.get(`${BASE_URL}/tracks/`, { params });
+    const data = response.data?.results || [];
 
-    const data = response.data;
-
-    return data.map((track) => ({
-      id: track.id,
-      title: track.name,
-      preview: track.audio,
-      artist: {
-        id: track.artist_id,
-        name: track.artist_name,
-        image: track.artist_image || track.album_image, // fallback
-      },
-      album: {
-        title: track.album_name,
-        cover_small: track.album_image,
-        cover_medium: track.album_image,
-      },
-      image: track.album_image,
-    }));
+    // ✅ Только треки с рабочим аудио
+    return data
+      .filter((track) => !!track.audio)
+      .map((track) => ({
+        id: track.id,
+        title: track.name || 'Untitled',
+        preview: track.audio,
+        artist: {
+          id: track.artist_id,
+          name: track.artist_name || 'Unknown Artist',
+        },
+        album: {
+          title: track.album_name || 'Unknown Album',
+          cover_small: track.album_image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+          cover_medium: track.album_image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+        },
+        image: track.album_image || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+      }));
   } catch (err) {
-    console.error('❌ Failed to fetch tracks from Jamendo:', err);
+    console.error('❌ Failed to fetch Jamendo tracks:', err);
     return [];
   }
 };
