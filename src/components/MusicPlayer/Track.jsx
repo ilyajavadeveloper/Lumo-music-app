@@ -8,7 +8,7 @@ const Track = ({ isPlaying, isActive, activeSong }) => (
         {activeSong?.title || 'Нет активной песни'}
       </p>
       <p className="truncate text-gray-300">
-        {activeSong?.subtitle || 'Неизвестный исполнитель'}
+        {activeSong?.subtitle || 'Unknown artist'}
       </p>
     </div>
   </div>

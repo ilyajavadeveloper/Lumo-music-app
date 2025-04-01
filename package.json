@@ -5,7 +5,9 @@
   "scripts": {
     "proxy": "node proxy-server.js",
     "dev": "vite",
-    "dev:all": "concurrently \"npm run proxy\" \"npm run dev\""
+    "dev:all": "concurrently \"npm run proxy\" \"npm run dev\"",
+    "build": "vite build",
+    "preview": "vite preview"
   },
 
   "dependencies": {

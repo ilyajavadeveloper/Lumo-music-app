@@ -24,8 +24,13 @@ const SongCard = ({ song, i, isPlaying, activeSong, data }) => {
     >
       <img
         alt="cover"
-        src={song.album?.cover_medium || song.album?.cover || 'https://via.placeholder.com/150'}
-        className="w-full h-44 rounded-lg shadow-lg"
+        src={
+          song.album?.cover_medium ||
+          song.album?.cover_small ||
+          song.image ||
+          'https://cdn-icons-png.flaticon.com/512/1384/1384060.png'
+        }
+        className="w-full h-44 rounded-lg shadow-lg object-cover"
       />
 
       <div className="mt-4">

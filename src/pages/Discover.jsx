@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Error, Loader, SongCard } from '../components';
 import { useSelector } from 'react-redux';
+import { Error, Loader, SongCard } from '../components';
+import { fetchJamendoTracks } from '../services/fetchJamendoTracks'; // путь поправь, если отличается
 
 const Discover = () => {
   const [tracks, setTracks] = useState([]);
@@ -12,10 +12,10 @@ const Discover = () => {
   useEffect(() => {
     const fetchTracks = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/deezer/search?q=pop');
-        setTracks(res.data || []);
+        const res = await fetchJamendoTracks('pop');
+        setTracks(res);
       } catch (err) {
-        setError('Не удалось загрузить треки');
+        setError('Error fetching tracks');
         console.error(err);
       } finally {
         setLoading(false);
@@ -25,7 +25,7 @@ const Discover = () => {
     fetchTracks();
   }, []);
 
-  if (loading) return <Loader title="Загрузка популярных треков..." />;
+  if (loading) return <Loader title="Loading popular tracks..." />;
   if (error) return <Error title={error} />;
 
   return (

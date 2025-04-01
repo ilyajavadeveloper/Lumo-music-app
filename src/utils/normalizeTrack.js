@@ -4,9 +4,15 @@ export const normalizeTrack = (raw) => {
   return {
     id: raw.id || raw.key || '',
     title: raw.title || raw.name || 'Unknown Title',
-    artistName: raw.artist?.name || raw.artistName || raw.subtitle || 'Unknown Artist',
-    artistId: raw.artist?.id || raw.artistId || raw.artists?.[0]?.adamid || '',
-    cover: raw.album?.cover_medium || raw.images?.coverart || raw.cover || 'https://via.placeholder.com/250x250',
-    raw, // сохраняем оригинал для будущего, если понадобится
+    preview: raw.audio || '', // ✅ обязательно
+    artist: {
+      id: raw.artist_id || raw.artist?.id || '',
+      name: raw.artist_name || raw.artist?.name || 'Unknown Artist',
+    },
+    album: {
+      cover_small: raw.album_image || '',
+      cover_medium: raw.album_image || '',
+    },
+    image: raw.album_image || '',
   };
 };

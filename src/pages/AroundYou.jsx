@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useSelector } from 'react-redux';
-
 import { Loader, Error, SongCard } from '../components';
+import { fetchJamendoTracks } from '../services/fetchJamendoTracks';
 
 const AroundYou = () => {
   const [tracks, setTracks] = useState([]);
@@ -10,32 +9,31 @@ const AroundYou = () => {
   const [error, setError] = useState(null);
   const { activeSong, isPlaying } = useSelector((state) => state.player);
 
-  // ❗ Жестко заданная страна (или жанр)
-  const country = 'FR'; // можно 'KZ', 'US', 'UK' и т.п.
+  const genre = 'electronic'; // или другой жанр: 'rock', 'pop', 'jazz'...
 
   useEffect(() => {
     const fetchSongs = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/deezer/search?q=${country}`);
-        setTracks(res.data);
+        const res = await fetchJamendoTracks(genre);
+        setTracks(res);
       } catch (err) {
-        console.error('Error fetching tracks:', err);
-        setError('Не удалось загрузить треки по региону');
+        console.error('Error fetching genre-based tracks:', err);
+        setError('Error fetching music by genre...');
       } finally {
         setLoading(false);
       }
     };
 
     fetchSongs();
-  }, [country]);
+  }, [genre]);
 
-  if (loading) return <Loader title="Loading music around you." />;
+  if (loading) return <Loader title="Loading music by genre..." />;
   if (error) return <Error title={error} />;
 
   return (
     <div className="flex flex-col">
       <h2 className="font-bold text-3xl text-white text-left mt-4 mb-10">
-        Музыка рядом с вами — <span className="font-black">{country}</span>
+        Музыка по жанру — <span className="font-black">{genre}</span>
       </h2>
 
       <div className="flex flex-wrap sm:justify-start justify-center gap-8">

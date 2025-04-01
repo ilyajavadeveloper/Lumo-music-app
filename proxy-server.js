@@ -3,6 +3,7 @@ const https = require('https');
 const url = require('url');
 
 const PORT = 5000;
+const JAMENDO_CLIENT_ID = 'fc610b1f';
 
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
@@ -19,126 +20,100 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ✅ /deezer/top-artists
-  if (pathname === '/deezer/top-artists') {
-    https.get('https://api.deezer.com/chart/0/tracks', (deezerRes) => {
-      let data = '';
-      deezerRes.on('data', chunk => (data += chunk));
-      deezerRes.on('end', () => {
-        try {
-          const parsed = JSON.parse(data).data || [];
-          const artistsMap = new Map();
-          parsed.forEach((track) => {
-            if (track.artist && !artistsMap.has(track.artist.id)) {
-              artistsMap.set(track.artist.id, track.artist);
-            }
-          });
-          res.writeHead(200);
-          res.end(JSON.stringify([...artistsMap.values()]));
-        } catch (err) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: 'Failed to parse Deezer data' }));
-        }
-      });
-    }).on('error', () => {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch from Deezer' }));
-    });
-    return;
-  }
+  // ✅ /jamendo/search?q=...
+  if (pathname === '/jamendo/search' && query.q) {
+    const jamendoUrl = `https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=30&namesearch=${encodeURIComponent(query.q)}&include=musicinfo+stats`;
 
-  // ✅ /deezer/top-charts
-  if (pathname === '/deezer/top-charts') {
-    https.get('https://api.deezer.com/chart/0/tracks', (deezerRes) => {
+    https.get(jamendoUrl, (jamRes) => {
       let data = '';
-      deezerRes.on('data', chunk => (data += chunk));
-      deezerRes.on('end', () => {
+      jamRes.on('data', chunk => data += chunk);
+      jamRes.on('end', () => {
         try {
-          const parsed = JSON.parse(data).data || [];
+          const parsed = JSON.parse(data).results || [];
           res.writeHead(200);
           res.end(JSON.stringify(parsed));
         } catch (err) {
           res.writeHead(500);
-          res.end(JSON.stringify({ error: 'Failed to parse Deezer data' }));
+          res.end(JSON.stringify({ error: 'Failed to parse Jamendo search data' }));
         }
       });
     }).on('error', () => {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch from Deezer' }));
+      res.end(JSON.stringify({ error: 'Failed to fetch from Jamendo' }));
     });
     return;
   }
 
-  // ✅ /deezer/search?q=...
-  if (pathname === '/deezer/search' && query.q) {
-    const deezerUrl = `https://api.deezer.com/search?q=${encodeURIComponent(query.q)}`;
-    https.get(deezerUrl, (deezerRes) => {
+  // ✅ /jamendo/top-tracks
+  if (pathname === '/jamendo/top-tracks') {
+    const jamendoUrl = `https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=30&order=popularity_total&include=musicinfo+stats`;
+
+    https.get(jamendoUrl, (jamRes) => {
       let data = '';
-      deezerRes.on('data', chunk => (data += chunk));
-      deezerRes.on('end', () => {
+      jamRes.on('data', chunk => data += chunk);
+      jamRes.on('end', () => {
         try {
-          const parsed = JSON.parse(data).data || [];
+          const parsed = JSON.parse(data).results || [];
           res.writeHead(200);
           res.end(JSON.stringify(parsed));
         } catch (err) {
           res.writeHead(500);
-          res.end(JSON.stringify({ error: 'Failed to parse search results' }));
+          res.end(JSON.stringify({ error: 'Failed to parse top tracks' }));
         }
       });
     }).on('error', () => {
       res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch search results' }));
+      res.end(JSON.stringify({ error: 'Failed to fetch top tracks' }));
     });
     return;
   }
 
-  // ✅ /deezer/artist/:id
-  if (pathname.startsWith('/deezer/artist/')) {
+  // ✅ /jamendo/artist/:id
+  if (pathname.startsWith('/jamendo/artist/')) {
     const artistId = pathname.split('/')[3];
+
     if (!artistId) {
       res.writeHead(400);
       res.end(JSON.stringify({ error: 'Missing artist ID' }));
       return;
     }
 
-    https.get(`https://api.deezer.com/artist/${artistId}`, (deezerRes) => {
-      let data = '';
-      deezerRes.on('data', chunk => (data += chunk));
-      deezerRes.on('end', () => {
-        try {
-          const artist = JSON.parse(data);
-          if (!artist.id) {
-            throw new Error('Invalid artist data');
-          }
+    const artistUrl = `https://api.jamendo.com/v3.0/artists/?client_id=${JAMENDO_CLIENT_ID}&id=${artistId}&format=json`;
+    const tracksUrl = `https://api.jamendo.com/v3.0/tracks/?client_id=${JAMENDO_CLIENT_ID}&format=json&limit=20&artist_id=${artistId}&include=musicinfo+stats`;
 
-          // теперь получаем top tracks
-          https.get(`https://api.deezer.com/artist/${artistId}/top?limit=10`, (topRes) => {
-            let topData = '';
-            topRes.on('data', chunk => (topData += chunk));
-            topRes.on('end', () => {
-              try {
-                const topParsed = JSON.parse(topData).data || [];
-                artist.topSongs = topParsed;
-                res.writeHead(200);
-                res.end(JSON.stringify(artist));
-              } catch (err) {
-                res.writeHead(500);
-                res.end(JSON.stringify({ error: 'Failed to parse artist top songs' }));
-              }
-            });
-          }).on('error', () => {
-            res.writeHead(500);
-            res.end(JSON.stringify({ error: 'Failed to fetch artist top songs' }));
-          });
-        } catch (err) {
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: 'Failed to parse artist data' }));
+    // Получаем артиста и его треки параллельно
+    Promise.all([
+      fetchHttps(artistUrl),
+      fetchHttps(tracksUrl)
+    ])
+      .then(([artistData, trackData]) => {
+        const artist = artistData.results?.[0];
+        const tracks = trackData.results || [];
+
+        if (!artist) {
+          res.writeHead(404);
+          res.end(JSON.stringify({ error: 'Artist not found' }));
+          return;
         }
+
+        // Формируем artist.image
+        artist.image = artist.image || artist.shareurl || 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png';
+
+        res.writeHead(200);
+        res.end(JSON.stringify({
+          artist: {
+            id: artist.id,
+            name: artist.name,
+            image: artist.image,
+          },
+          tracks,
+        }));
+      })
+      .catch((err) => {
+        console.error(err);
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Failed to fetch artist data or tracks' }));
       });
-    }).on('error', () => {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: 'Failed to fetch artist info' }));
-    });
 
     return;
   }
@@ -148,6 +123,24 @@ const server = http.createServer((req, res) => {
   res.end(JSON.stringify({ error: 'Not found' }));
 });
 
+// Утилита для запроса данных по HTTPS и парсинга JSON
+function fetchHttps(apiUrl) {
+  return new Promise((resolve, reject) => {
+    https.get(apiUrl, (apiRes) => {
+      let data = '';
+      apiRes.on('data', chunk => data += chunk);
+      apiRes.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve(parsed);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
 server.listen(PORT, () => {
-  console.log(`🚀 Basic Node proxy running at http://localhost:${PORT}`);
+  console.log(`🚀 Jamendo proxy running at http://localhost:${PORT}`);
 });

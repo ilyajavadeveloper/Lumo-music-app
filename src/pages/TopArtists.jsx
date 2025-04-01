@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
 import { ArtistCard, Error, Loader } from '../components';
 
 const TopArtists = () => {
@@ -11,11 +10,24 @@ const TopArtists = () => {
   useEffect(() => {
     const fetchTopArtists = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/deezer/top-artists');
-        setArtists(response.data || []);
+        const response = await axios.get('http://localhost:5000/jamendo/top-tracks');
+        const topTracks = response.data || [];
+
+        const uniqueArtistsMap = new Map();
+        topTracks.forEach((track) => {
+          if (!uniqueArtistsMap.has(track.artist_id)) {
+            uniqueArtistsMap.set(track.artist_id, {
+              id: track.artist_id,
+              name: track.artist_name,
+              image: track.album_image || '/default-artist.png', // ✅ fallback если вдруг пусто
+            });
+          }
+        });
+
+        setArtists(Array.from(uniqueArtistsMap.values()));
       } catch (err) {
         console.error('Error fetching top artists:', err);
-        setError('Could not load top artists.');
+        setError('Error fetching artists');
       } finally {
         setLoading(false);
       }

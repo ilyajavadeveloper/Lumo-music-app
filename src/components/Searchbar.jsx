@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ThemeToggle from './ThemeToggle';
+
 
 const Searchbar = () => {
   const [term, setTerm] = useState('');
@@ -29,8 +29,7 @@ const Searchbar = () => {
         </button>
       </form>
 
-      {/* Theme toggle на краю */}
-      <ThemeToggle />
+
     </div>
   );
 };

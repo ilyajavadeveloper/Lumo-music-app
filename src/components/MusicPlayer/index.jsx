@@ -7,7 +7,8 @@ import {
   FaStepForward,
   FaHeart,
   FaRegHeart,
-  FaVolumeUp
+  FaVolumeUp,
+  FaRedo, // 🔁 иконка для reload
 } from 'react-icons/fa';
 import { playPause, nextSong, prevSong } from '/src/redux/features/playerSlice';
 import { toggleLike } from '/src/redux/features/likedSlice';
@@ -52,6 +53,14 @@ const MusicPlayer = () => {
   const handleLike = () => {
     if (activeSong?.id) {
       dispatch(toggleLike(activeSong));
+    }
+  };
+
+  const handleReloadTrack = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      dispatch(playPause(true));
     }
   };
 
@@ -107,11 +116,20 @@ const MusicPlayer = () => {
           <FaStepForward onClick={handleNext} className="cursor-pointer hover:text-green-400" />
         </div>
 
-        {/* Like + Volume */}
+        {/* Like + Reload + Volume */}
         <div className="flex items-center gap-3">
           <button onClick={handleLike} className="text-xl hover:scale-110 transition">
             {isLiked ? <FaHeart className="text-pink-500" /> : <FaRegHeart />}
           </button>
+
+          <button
+            onClick={handleReloadTrack}
+            className="text-lg text-white hover:text-yellow-400 transition"
+            title="Перезапустить трек"
+          >
+            <FaRedo />
+          </button>
+
           <FaVolumeUp />
           <input
             type="range"
